@@ -43,8 +43,6 @@ def fetch_meta_campaign_data(account_id, from_date, to_date, ads_performance):
 
         data = {}
 
-        convert_data = []
-
         ad_account = AdAccount("act_" + account_id)
 
         # 날짜 범위 반복
@@ -55,7 +53,8 @@ def fetch_meta_campaign_data(account_id, from_date, to_date, ads_performance):
             date_str = current_date.strftime("%Y-%m-%d")
             params["time_range"] = {"since": date_str, "until": date_str}
 
-            time.sleep(1)
+            # time.sleep(2)
+
             insights = ad_account.get_insights(fields=fields, params=params)
 
             for insight in insights:
@@ -63,14 +62,19 @@ def fetch_meta_campaign_data(account_id, from_date, to_date, ads_performance):
 
                 if date_str not in data:
                     data[date_str] = []
+
                 data[date_str].append(insight_data)
 
             current_date += timedelta(days=1)
+
+        # print(data)
 
         for date, insights in data.items():
             for insight in insights:
                 actions_value_total = 0
                 actions_total = 0
+
+                # print(insight)
 
                 if "action_values" in insight:
                     action_values = insight["action_values"]
@@ -90,31 +94,46 @@ def fetch_meta_campaign_data(account_id, from_date, to_date, ads_performance):
                         ):
                             actions_total += int(action["value"])
 
+                device_type = {
+                    "desktop": "PC",
+                    "mobile_app": "모바일",
+                    "mobile_web": "모바일",
+                    "unknown": "모바일",
+                }.get(insight["device_platform"], None)
+
+                impressions = insight.get("impressions", 0)
+                clicks = int(insight.get("clicks", 0))
+                spend = insight.get("spend", 0)
+
                 ads_performance.append(
                     {
                         "매체명": "META",
-                        "기기": insight["device_platform"],
+                        "기기": device_type,
                         "캠페인유형": "SNS",
                         "캠페인상태": "운영중",
                         "날짜": insight["date_start"],
                         "캠페인ID": insight["campaign_id"],
                         "캠페인명": insight["campaign_name"],
-                        "노출수": int(insight["impressions"]),
-                        "클릭수": int(insight["clicks"]),
-                        "클릭률": (int(insight["clicks"]) / int(insight["impressions"]))
-                        if int(insight["clicks"]) > 0
+                        "노출수": int(insight.get("impressions", 0)),
+                        "클릭수": clicks,
+                        "클릭률": (clicks / int(insight.get("impressions", 1)))
+                        if int(insight.get("impressions", 1)) > 0
                         else 0,
-                        "비용": int(insight["spend"]),
+                        "비용": int(insight.get("spend", 0)),
                         "전환수": actions_total,
-                        "전환률": (int(actions_total) / int(insight["clicks"]))
-                        if int(actions_total) > 0 and int(insight["clicks"]) > 0
+                        "전환률": (actions_total / clicks)
+                        if actions_total > 0 and clicks > 0
                         else 0,
                         "전환가치": actions_value_total,
+                        "ROAS": (
+                            int(actions_value_total) / int(insight.get("spend", 0))
+                        )
+                        if int(actions_value_total) > 0 and int(actions_value_total) > 0
+                        else 0,
                         "PC평균순위": 0,
                         "MO평균순위": 0,
                     }
                 )
-
         return ads_performance
 
     except Exception as e:

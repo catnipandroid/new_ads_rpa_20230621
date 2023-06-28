@@ -110,13 +110,13 @@ def fetch_gads_campaign_performance_data(cid, year, month, from_day, to_day):
 def write_gads_camapaign_performance_data(ads_performance, data):
     for i in data:
         device_type = {
-            0: "TV",
-            1: "PC",
+            0: "모바일",
+            1: "모바일",
             2: "모바일",
-            3: "기타",
-            4: "태블릿",
-            5: "알수없음",
-            6: "명시되지않음",
+            3: "모바일",
+            4: "PC",
+            5: "모바일",
+            6: "모바일",
         }.get(i["campaign_device"], None)
 
         campaign_status = {
@@ -130,17 +130,17 @@ def write_gads_camapaign_performance_data(ads_performance, data):
         campaign_type = {
             0: "명시되지않음",
             1: "알수없음",
-            2: "검색",
-            3: "디스플레이",
-            4: "쇼핑",
+            2: "구글애즈/검색",
+            3: "구글애즈/디스플레이",
+            4: "구글애즈/쇼핑",
             5: "호텔",
             6: "비디오",
             7: "멀티채널",
             8: "로컬",
-            9: "스마트",
-            10: "성과최대화",
+            9: "구글애즈/스마트",
+            10: "구글애즈/성과최대화",
             11: "로컬서비스",
-            12: "디스커버리",
+            12: "구글애즈/디스커버리",
             13: "여행",
         }.get(i["campaign_channel_type"], None)
 
@@ -160,6 +160,7 @@ def write_gads_camapaign_performance_data(ads_performance, data):
                 "전환수": int(i["ccnt"]),
                 "전환률": i["crto"],
                 "전환가치": int(i["convAmt"]),
+                "ROAS": (int(i["convAmt"]) / int(i["cost"])) if int(i["cost"]) > 0 else 0,
                 "PC평균순위": 0,
                 "MO평균순위": 0,
             }

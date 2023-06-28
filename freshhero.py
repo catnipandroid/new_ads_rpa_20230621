@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import configparser
 import pandas as pd
 from NaverSA import (
@@ -47,11 +49,10 @@ write_campaign_performance_data = write_campaign_performance_data(
 #     ads_performance, fetch_gads_campaign_performance_data
 # )
 
-
 # Meta
 fetch_meta_campaign_data(meta_account_id, from_date, to_date, ads_performance)
 
 df = pd.DataFrame(ads_performance)
 
-output_file = "freshhero_output.xlsx"
+output_file = "프레시히어로_report_" + from_date + "_" + to_date + ".xlsx"
 df.to_excel(output_file, index=False, engine="openpyxl")

@@ -2,43 +2,9 @@ import requests
 import time
 from .utils import signaturehelper
 import configparser
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
-# 날짜 정보를 저장
-days31 = [
-    "01",
-    "02",
-    "03",
-    "04",
-    "05",
-    "06",
-    "07",
-    "08",
-    "09",
-    "10",
-    "11",
-    "12",
-    "13",
-    "14",
-    "15",
-    "16",
-    "17",
-    "18",
-    "19",
-    "20",
-    "21",
-    "22",
-    "23",
-    "24",
-    "25",
-    "26",
-    "27",
-    "28",
-    "29",
-    "30",
-    "31",
-]
 
 # API info 가져오기
 config = configparser.ConfigParser()
@@ -159,18 +125,26 @@ def fetch_master_report_list(CUSTOMER_ID):
 
 
 def fetch_campaign_performance(
-    CUSTOMER_ID, campaign_list, year, month, from_day, to_day
+    CUSTOMER_ID, campaign_list, year, month, from_date, to_date
 ):
     campaign_performance_data = []
 
-    for i in days31[0 : int(to_day)]:
-        reportDate = json.dumps(
-            {
-                "since": year + "-" + month + "-" + str(i),
-                "until": year + "-" + month + "-" + str(i),
-            }
-        )
+    current_date = datetime.strptime(from_date, "%Y-%m-%d")
+    end_date = datetime.strptime(to_date, "%Y-%m-%d")
+
+    while current_date <= end_date:
+        date_str = current_date.strftime("%Y-%m-%d")
+
+        print(date_str)
+
         for idx, j in enumerate(campaign_list):
+            reportDate = json.dumps(
+                {
+                    "since": date_str,
+                    "until": date_str,
+                }
+            )
+
             r = requests.get(
                 BASE_URL + "/stats",
                 params={
@@ -184,12 +158,14 @@ def fetch_campaign_performance(
             if r.status_code == 200:
                 data = r.json()
 
-                data["date"] = year + "-" + month + "-" + str(i)
+                data["date"] = date_str
                 data["campaign_tp"] = campaign_list[idx]["campaign_tp"]
                 data["campaign_status"] = campaign_list[idx]["campaign_status"]
                 data["campaign_name"] = campaign_list[idx]["campaign_name"]
 
                 campaign_performance_data.append(data)
+
+        current_date += timedelta(days=1)
 
     return campaign_performance_data
 
@@ -225,6 +201,11 @@ def write_campaign_performance_data(ads_performance, naverSA_performance_data):
                     "전환수": i["data"][0]["ccnt"] if i["data"] else 0,
                     "전환률": i["data"][0]["crto"] if i["data"] else 0,
                     "전환가치": i["data"][0]["convAmt"] if i["data"] else 0,
+                    "ROAS": (
+                        int(i["data"][0]["convAmt"]) / int(i["data"][0]["salesAmt"])
+                    )
+                    if i["data"][0]["salesAmt"] > 0
+                    else 0,
                     "PC평균순위": i["data"][0]["pcNxAvgRnk"] if i["data"] else 0,
                     "MO평균순위": i["data"][0]["mblNxAvgRnk"] if i["data"] else 0,
                 }
