@@ -1,64 +1,93 @@
 import requests
+import configparser
+from datetime import datetime, timedelta
 import json
 from datetime import datetime
 
 # conversion_test = "https://www.mediacategory.com/servlet/API/ver2.1/JSON/sNo/0/STATS?type=AD&statsType=conversion&targetDate=20230614&userId=godomall&apiKey=TWpBeU1URXhNamt4TURJeU5USXdYMmR2Wkc5dFlXeHM"
 # https://www.mediacategory.com/servlet/API/ver2.1/JSON/sNo/0/STATS?type=AD&statsType=ad&targetDate=20230201&userId=godomall&apiKey=TWpBeU1URXhNamt4TURJeU5USXdYMmR2Wkc5dFlXeHM
 
-inquire_year = input("조회하실 년도? ")
-inquire_month = input("조회하실 월? ")
-inquire_day = int(input("일자를 언제까지 조회? "))
+config = configparser.ConfigParser()
+config.read(r"config/info.ini")
 
-targetDate = inquire_year + inquire_month
-apiKey = "TWpBeU1URXhNamt4TURJeU5USXdYMmR2Wkc5dFlXeHM"
-userId = "godomall"
+token = config["Mobon"]["token"]
+userId = config["Mobon"]["userId"]
 
-
-def fetch_ads_performance_data(statsType, view_userId):
-    url = f"https://www.mediacategory.com/servlet/API/ver2.1/JSON/sNo/0/STATS?type=AD&statsType={statsType}\
-            &userId={userId}&apiKey={apiKey}"
-
-    data_arry = []
-
-    for i in range(1, int(inquire_day + 1)):
-        date = datetime.strptime(str(i), "%d")
-        api_url = (
-            url
-            + "&targetDate="
-            + inquire_year
-            + inquire_month
-            + str(date.strftime("%dd"))
-        )
-
-        response = requests.get(api_url)
-
-        json_data = response.json()
-
-        if json_data["result_code"] == 200:
-            for j in json_data["data"]:
-                if j["userId"] == view_userId:
-                    j["date"] = inquire_year + inquire_month + str(date.strftime("%d"))
-                    data_arry.append(j)
-        else:
-            data_arry.append(
-                {
-                    "date": inquire_year + inquire_month + str(date.strftime("%d")),
-                    "serviceGubun": "noData",
-                    "siteCode": "e7d9193d36474d229e351a3007e13073",
-                    "userId": view_userId,
-                    "siteName": "noData",
-                    "adGubun": "noData",
-                    "adGubunName": "noData",
-                    "viewCnt1": 0,
-                    "clickCnt": 0,
-                    "point": 0,
-                }
-            )
-
-    return data_arry
+ad_url = "https://www.mediacategory.com/servlet/API/ver2.1/JSON/sNo/0/STATS?type=AD&statsType=conversion&targetDate=20230614&userId=godomall&apiKey=TWpBeU1URXhNamt4TURJeU5USXdYMmR2Wkc5dFlXeHM"
+conversion_url = ""
 
 
-# conversion_api = fetch_ads_performance_data("conversion", "trdst")
-ads_api = fetch_ads_performance_data("ad", "trdst")
+# Mobon은 전체 광고주의 데이터를 받은 후, json 파일로 파싱 후 다운로드 -> 그 뒤 json파일 다시 딕셔너리로 파싱해서 광고주별로 데이터 가져오기
+def fetch_mobon_performance(from_date, to_date):
+    current_date = datetime.strptime(from_date, "%Y-%m-%d")
+    end_date = datetime.strptime(to_date, "%Y-%m-%d")
 
-print(ads_api)
+    while current_date <= end_date:
+        date_str = current_date.strftime("%Y-%m-%d")
+        date_str_replace = date_str.replace("-", "")
+
+        ad_url = f"https://www.mediacategory.com/servlet/API/ver2.1/JSON/sNo/0/STATS?type=AD&statsType=ad&targetDate={date_str_replace}&userId=godomall&apiKey={token}"
+
+        r = requests.get(ad_url)
+
+        data = r.json()
+
+        json_data = json.dumps(data, ensure_ascii=False)
+
+        output_file = f"mobon_ad_{from_date}_{to_date}.json"
+
+        with open("Mobon/data/" + output_file, "w", encoding="utf-8") as file:
+            file.write(json_data)
+
+        current_date += timedelta(days=1)
+
+
+def fetch_mobon_conversion(from_date, to_date):
+    current_date = datetime.strptime(from_date, "%Y-%m-%d")
+    end_date = datetime.strptime(to_date, "%Y-%m-%d")
+
+    while current_date <= end_date:
+        date_str = current_date.strftime("%Y-%m-%d")
+        date_str_replace = date_str.replace("-", "")
+
+        ad_url = f"https://www.mediacategory.com/servlet/API/ver2.1/JSON/sNo/0/STATS?type=AD&statsType=conversion&targetDate={date_str_replace}&userId=godomall&apiKey={token}"
+
+        r = requests.get(ad_url)
+
+        data = r.json()
+
+        json_data = json.dumps(data, ensure_ascii=False)
+
+        output_file = f"mobon_conversion_{from_date}_{to_date}.json"
+
+        with open("Mobon/data/" + output_file, "w", encoding="utf-8") as file:
+            file.write(json_data)
+
+        current_date += timedelta(days=1)
+
+
+def write_mobon_ad_data(from_date, to_date, userId, ads_performance):
+    impCnt = 0
+    clkCnt = 0
+    CTR = 0
+    cost = 0
+    ccnt = 0
+    CVR = 0
+    convAmt = 0
+    ROAS = 0
+
+    file_name = f"mobon_ad_{from_date}_{to_date}.json"
+
+    with open(file_name, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    performance_data = data
+
+    if data["result_code"] == 200:
+        for i in performance_data["data"]:
+            if i["userId"] == userId:
+                ads_performance.append({})
+
+
+def write_mobon_conversion_data(from_date, to_date, userId):
+    json_file = f"mobon_conversion_{from_date}_{to_date}.json"

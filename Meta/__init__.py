@@ -114,19 +114,20 @@ def fetch_meta_campaign_data(account_id, from_date, to_date, ads_performance):
                         "날짜": insight["date_start"],
                         "캠페인ID": insight["campaign_id"],
                         "캠페인명": insight["campaign_name"],
-                        "노출수": int(insight.get("impressions", 0)),
+                        "노출수": int(float(insight.get("impressions", 0))),
                         "클릭수": clicks,
-                        "클릭률": (clicks / int(insight.get("impressions", 1)))
+                        "클릭률": (clicks / int(float(insight.get("impressions", 1))))
                         if int(insight.get("impressions", 1)) > 0
                         else 0,
-                        "비용": int(insight.get("spend", 0)),
+                        "비용": int(float(insight.get("spend", 0))),
                         "전환수": actions_total,
                         "전환률": (actions_total / clicks)
                         if actions_total > 0 and clicks > 0
                         else 0,
                         "전환가치": actions_value_total,
                         "ROAS": (
-                            int(actions_value_total) / int(insight.get("spend", 0))
+                            int(float(actions_value_total))
+                            / int(float(insight.get("spend", 0)))
                         )
                         if int(actions_value_total) > 0 and int(actions_value_total) > 0
                         else 0,

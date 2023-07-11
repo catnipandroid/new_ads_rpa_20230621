@@ -124,9 +124,7 @@ def fetch_master_report_list(CUSTOMER_ID):
         file.write(json_data)
 
 
-def fetch_campaign_performance(
-    CUSTOMER_ID, campaign_list, year, month, from_date, to_date
-):
+def fetch_campaign_performance(CUSTOMER_ID, campaign_list, from_date, to_date):
     campaign_performance_data = []
 
     current_date = datetime.strptime(from_date, "%Y-%m-%d")
@@ -196,10 +194,17 @@ def write_campaign_performance_data(ads_performance, naverSA_performance_data):
                     "캠페인명": campaign_name,
                     "노출수": i["data"][0]["impCnt"] if i["data"] else 0,
                     "클릭수": i["data"][0]["clkCnt"] if i["data"] else 0,
-                    "클릭률": i["data"][0]["ctr"] if i["data"] else 0,
+                    "클릭률": int(i["data"][0]["clkCnt"]) / int(i["data"][0]["impCnt"])
+                    if i["data"] and int(i["data"][0]["clkCnt"]) > 0
+                    else 0,
                     "비용": i["data"][0]["salesAmt"] if i["data"] else 0,
                     "전환수": i["data"][0]["ccnt"] if i["data"] else 0,
-                    "전환률": i["data"][0]["crto"] if i["data"] else 0,
+                    "전환률": (
+                        int(i["data"][0]["ccnt"] if i["data"] else 0)
+                        / int(i["data"][0]["clkCnt"] if i["data"] else 0)
+                    )
+                    if i["data"] and int(i["data"][0]["clkCnt"]) > 0
+                    else 0,
                     "전환가치": i["data"][0]["convAmt"] if i["data"] else 0,
                     "ROAS": (
                         int(i["data"][0]["convAmt"]) / int(i["data"][0]["salesAmt"])

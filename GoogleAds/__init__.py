@@ -40,7 +40,7 @@ days31 = [
 googleads_client = GoogleAdsClient.load_from_storage(version="v14")
 
 
-def fetch_gads_campaign_performance_data(cid, year, month, from_day, to_day):
+def fetch_gads_campaign_performance_data(cid, from_day, to_day):
     ga_service = googleads_client.get_service("GoogleAdsService")
 
     campaign_performance_data = []
@@ -160,7 +160,9 @@ def write_gads_camapaign_performance_data(ads_performance, data):
                 "전환수": int(i["ccnt"]),
                 "전환률": i["crto"],
                 "전환가치": int(i["convAmt"]),
-                "ROAS": (int(i["convAmt"]) / int(i["cost"])) if int(i["cost"]) > 0 else 0,
+                "ROAS": (int(i["convAmt"]) / int(i["cost"]))
+                if int(i["cost"]) > 0
+                else 0,
                 "PC평균순위": 0,
                 "MO평균순위": 0,
             }

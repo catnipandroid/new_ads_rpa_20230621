@@ -17,9 +17,9 @@ from Meta import fetch_meta_campaign_data
 config = configparser.ConfigParser()
 config.read(r"config/info.ini")
 
-gads_cid = "7694228249"
-naver_id = config["naver_sa"]["aminotree_CUSTOMER_ID"]
-meta_account_id = "2658022241164546"
+gads_cid = "5587960732"
+naver_id = config["naver_sa"]["1300k_CUSTOMER_ID"]
+meta_account_id = "646091796133597"
 
 year = input("조회하실 연도? ")
 inquire_from_date = input("언제부터 조회? MM-DD ")
@@ -53,5 +53,5 @@ fetch_meta_campaign_data(meta_account_id, from_date, to_date, ads_performance)
 
 df = pd.DataFrame(ads_performance)
 
-output_file = f"complete_reports/아미노트리_report_" + from_date + "_" + to_date + ".xlsx"
+output_file = f"complete_reports/1300k_report_" + from_date + "_" + to_date + ".xlsx"
 df.to_excel(output_file, index=False, engine="openpyxl")
